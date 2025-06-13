@@ -35,7 +35,6 @@ public class ExportStepHelper {
 			log.info("Configuring step with scan size estimator");
 			step.maxItemCountSupplier(reader.scanSizeEstimator());
 		} else {
-			checkNotifyConfig(reader.getClient(), log);
 			log.info("Configuring export step with live true, flushInterval {}, idleTimeout {}",
 					reader.getFlushInterval(), reader.getIdleTimeout());
 			step.live(true);
@@ -43,24 +42,6 @@ public class ExportStepHelper {
 			step.idleTimeout(reader.getIdleTimeout());
 		}
 		return step;
-	}
-
-	public static void checkNotifyConfig(AbstractRedisClient client, Logger log) {
-		Map<String, String> valueMap;
-		try (StatefulRedisModulesConnection<String, String> conn = RedisModulesUtils.connection(client)) {
-			try {
-				valueMap = conn.sync().configGet(NOTIFY_CONFIG);
-			} catch (RedisException e) {
-				log.info("Could not check keyspace notification config", e);
-				return;
-			}
-		}
-		String actual = valueMap.getOrDefault(NOTIFY_CONFIG, "");
-		log.info("Retrieved config {}: {}", NOTIFY_CONFIG, actual);
-		Set<Character> expected = characterSet(NOTIFY_CONFIG_VALUE);
-		Assert.isTrue(characterSet(actual).containsAll(expected),
-				String.format("Keyspace notifications not property configured. Expected %s '%s' but was '%s'.",
-						NOTIFY_CONFIG, NOTIFY_CONFIG_VALUE, actual));
 	}
 
 	private static Set<Character> characterSet(String string) {
